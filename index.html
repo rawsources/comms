@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Did You Catch That?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* One ordinary day, played back like a quiet stage. Gold = attention, ember = noise and harm, glacier = screens and cold logic. */
+  --ink:#17151c;
+  --ink-2:#221f29;
+  --paper:#efe9df;
+  --mute:#938d9c;
+  --ember:#ff7a59;
+  --glacier:#7cb8ff;
+  --gold:#e8c37a;
+  --line:rgba(239,233,223,.16);
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --voice:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --body:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--ink);color:var(--paper);font-family:var(--body);font-size:17px;line-height:1.5;overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+#glow{position:fixed;left:0;top:0;width:760px;height:760px;margin:-380px 0 0 -380px;border-radius:50%;
+  background:radial-gradient(circle,rgba(240,222,186,.12) 0%,rgba(240,222,186,.045) 32%,transparent 62%);pointer-events:none;z-index:0;will-change:transform}
+#grain{position:fixed;inset:0;pointer-events:none;z-index:60;opacity:.07;mix-blend-mode:overlay}
+
+.scene{position:absolute;left:0;right:0;top:0;bottom:64px;display:flex;flex-direction:column;
+  padding:clamp(20px,4.5vw,64px) clamp(16px,5.5vw,80px);overflow-y:auto;z-index:1;opacity:0;visibility:hidden;transition:opacity .8s,visibility .8s}
+.scene.on{opacity:1;visibility:visible}
+.wrap{width:100%;max-width:980px;margin:auto 0;display:flex;flex-direction:column;gap:26px}
+.wrap.wide{max-width:1200px}
+.label{display:flex;align-items:center;gap:12px;font-size:12px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.label::before{content:"";width:28px;height:1px;background:currentColor}
+
+.voice p{font-family:var(--voice);font-style:italic;font-size:clamp(26px,3.4vw,44px);line-height:1.16;margin:0 0 .28em;max-width:30ch;text-wrap:pretty}
+.voice.md p{font-size:clamp(22px,2.6vw,34px);max-width:38ch}
+.voice.sm p{font-size:clamp(20px,2vw,26px);max-width:44ch;color:#d9d2c6}
+.voice p.aside{color:var(--mute)}
+.caret{display:inline-block;width:2px;height:.82em;background:var(--gold);margin-left:3px;vertical-align:-.06em;animation:blink 1.05s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.dots{display:inline-flex;gap:6px;vertical-align:middle}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--mute);animation:dot 1s infinite ease-in-out}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes dot{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+
+.reveal{opacity:0;transform:translateY(10px);transition:opacity .7s,transform .7s;pointer-events:none}
+.reveal.in{opacity:1;transform:none;pointer-events:auto}
+.btn{font-size:16px;font-weight:500;color:var(--paper);background:transparent;border:1px solid rgba(239,233,223,.32);padding:12px 22px;border-radius:999px;cursor:pointer;transition:border-color .2s,background .2s}
+.btn:hover{border-color:var(--paper);background:rgba(239,233,223,.05)}
+.btn.solid{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+
+/* intro */
+h1.title{font-family:var(--display);font-weight:800;font-size:clamp(54px,10vw,150px);line-height:.88;letter-spacing:-.045em;margin:0}
+h1.title span{color:transparent;-webkit-text-stroke:1.5px rgba(239,233,223,.5)}
+.kicker{font-size:14px;color:var(--mute);letter-spacing:.04em}
+.dayline{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--mute);font-variant-numeric:tabular-nums}
+.dayline span b{color:var(--gold);font-weight:600;margin-right:6px}
+
+/* moment layout */
+.grid2{display:grid;grid-template-columns:1.12fr .88fr;gap:clamp(18px,3.2vw,44px);align-items:start}
+.stage{position:relative;border:1px solid var(--line);border-radius:18px;background:rgba(34,31,41,.6);padding:16px 20px 24px;min-height:360px;overflow:hidden;transition:box-shadow 1.2s}
+.stage.blue{box-shadow:inset 0 0 90px rgba(124,184,255,.12)}
+.stage-h{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mute);letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px}
+.stage-h time{color:var(--gold);font-variant-numeric:tabular-nums;font-weight:700;margin-right:8px}
+.hr{display:flex;align-items:center;gap:14px}
+.db{display:flex;align-items:center;gap:8px}
+.db i{width:84px;height:5px;border-radius:5px;background:rgba(239,233,223,.1);overflow:hidden;display:block}
+.db i b{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--ember));transition:width .5s}
+.replay{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);background:transparent;border:1px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer}
+.replay:hover{color:var(--paper);border-color:var(--paper)}
+.lines{position:relative;z-index:1;display:flex;flex-direction:column;gap:13px}
+.spot{position:absolute;left:0;right:0;height:150px;top:0;opacity:0;background:radial-gradient(55% 50% at 45% 50%,rgba(232,195,122,.2),transparent 72%);transition:top 1.5s cubic-bezier(.6,0,.2,1),opacity .8s;pointer-events:none;z-index:0}
+.noise{position:absolute;inset:56px 0 0;pointer-events:none;z-index:2}
+.ln{display:grid;grid-template-columns:118px 1fr;gap:14px;align-items:baseline;transition:opacity .9s,transform .9s,filter .9s}
+.ln .who{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);font-weight:600;text-align:right;line-height:1.3}
+.ln .tx{font-size:19px;line-height:1.35;transition:font-size .6s,opacity .6s}
+.ln.th .tx{font-family:var(--voice);font-style:italic;color:var(--mute);font-size:20px}
+.ln.dim{opacity:.3}
+.ln.shoved{opacity:.3;transform:translateX(-12px);filter:blur(.5px)}
+.tx.s1{font-size:21px}.tx.s2{font-size:26px;font-weight:600}.tx.s3{font-size:33px;font-weight:800;letter-spacing:-.01em;line-height:1.1}
+.ln.quiet .tx{font-size:16px;opacity:.65}
+.ln.quieter .tx{font-size:14px;opacity:.45}
+.ln.phone .tx::before{content:"";display:inline-block;width:9px;height:14px;border-radius:2px;background:var(--glacier);margin-right:10px;box-shadow:0 0 14px 4px rgba(124,184,255,.45);vertical-align:-1px}
+.tag{display:inline-block;margin-left:10px;font:600 10px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--ember);border:1px solid rgba(255,122,89,.5);border-radius:999px;padding:4px 8px;vertical-align:3px;font-style:normal}
+.ln.ignored .tx{opacity:.5}
+.sfx{position:absolute;font-family:var(--display);font-weight:800;color:var(--ember);opacity:0;transform:scale(.7) rotate(var(--r,0deg));transition:opacity .35s,transform .35s;white-space:nowrap;letter-spacing:-.01em}
+.sfx.in{opacity:.82;transform:scale(1) rotate(var(--r,0deg))}
+/* chat */
+.stage.chat .lines{gap:8px}
+.chat-h{display:flex;justify-content:space-between;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-bottom:4px}
+.bub{max-width:82%;padding:10px 14px;border-radius:16px;font-size:17px;line-height:1.38}
+.bub.them{align-self:flex-start;background:rgba(255,122,89,.13);border:1px solid rgba(255,122,89,.32);border-bottom-left-radius:4px}
+.bub.me{align-self:flex-end;background:rgba(124,184,255,.11);border:1px solid rgba(124,184,255,.32);border-bottom-right-radius:4px}
+.meta{align-self:flex-end;font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+.typ{align-self:flex-start;padding:12px 14px;border-radius:16px;background:rgba(255,122,89,.08)}
+.note{align-self:center;font-family:var(--voice);font-style:italic;color:var(--mute);font-size:19px;margin-top:6px}
+
+.side{display:flex;flex-direction:column;gap:18px}
+.q{font-family:var(--display);font-weight:700;font-size:clamp(22px,2.2vw,28px);letter-spacing:-.01em;margin-bottom:12px}
+.opts{display:grid;gap:10px}
+.opt{text-align:left;border:1px solid var(--line);background:transparent;color:var(--paper);padding:13px 16px;border-radius:12px;font-size:16px;cursor:pointer;transition:border-color .2s,background .2s,opacity .4s}
+.opt:hover:not(:disabled){border-color:rgba(239,233,223,.45);background:rgba(239,233,223,.03)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--gold);background:rgba(232,195,122,.09)}
+.opt.wrong{border-color:rgba(255,122,89,.6)}
+.opt.fade{opacity:.35}
+.insight{display:grid;gap:14px;border-top:1px solid var(--line);padding-top:16px}
+.insight h4{margin:0 0 4px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);font-weight:600}
+.insight p{margin:0;font-size:16px;line-height:1.5}
+.insight .lands{font-family:var(--voice);font-style:italic;font-size:21px;line-height:1.25}
+.insight .try{border-left:3px solid var(--gold);padding-left:14px}
+.insight .src{font-size:12px;color:var(--mute);margin-top:6px}
+.insight .src:empty{display:none}
+.bub .bn{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-bottom:2px}
+.bub.hot{background:rgba(255,122,89,.22);border-color:var(--ember);font-weight:600;animation:shake .45s 2}
+.bub.cold{background:rgba(124,184,255,.18);border-color:var(--glacier)}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.acts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.acts>div{border-top:1px solid var(--line);padding-top:12px;display:grid;gap:4px}
+.acts b{font-family:var(--display);font-size:20px}
+.acts span{font-size:14px;color:var(--mute)}
+.acts small{font-size:12px;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.actrow{grid-column:1/-1;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);margin-top:8px}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,4vw,56px);align-items:start}
+.tl{display:flex;flex-direction:column;gap:16px}
+.t-origin{font-size:13px;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;font-weight:600}
+.t-name{font-family:var(--display);font-weight:800;font-size:clamp(44px,6.5vw,92px);line-height:.92;letter-spacing:-.04em;margin:0}
+.t-plain{font-size:clamp(18px,1.6vw,21px);line-height:1.5;margin:0;max-width:46ch}
+.t-src{font-size:12px;color:var(--mute);margin:0;max-width:60ch}
+.tr{display:flex;flex-direction:column;gap:20px}
+.widget{border:1px solid var(--line);border-radius:18px;background:rgba(34,31,41,.6);padding:20px;display:grid;gap:14px}
+.wcap{margin:0;font-size:14px;color:var(--mute)}
+.hab{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.hp{--o:1;border-radius:14px;background:rgba(23,21,28,.7);height:190px;position:relative;display:grid;place-items:center;overflow:hidden}
+.hl{position:absolute;top:12px;left:14px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.hc{font-family:var(--display);font-weight:800;font-size:30px;color:var(--ember);opacity:var(--o);transition:opacity .6s}
+.pulse{position:absolute;inset:0;display:grid;place-items:center;opacity:var(--o);transition:opacity .6s}
+.pulse i{position:absolute;width:60px;height:60px;border-radius:50%;border:2px solid var(--ember);animation:ring 1.4s ease-out forwards}
+@keyframes ring{from{transform:scale(.4);opacity:.9}to{transform:scale(2.6);opacity:0}}
+.tt{border-radius:14px;background:rgba(23,21,28,.7);padding:16px 18px;min-height:96px}
+.ttw{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.ttl{margin:6px 0 0;font-size:22px;line-height:1.3}
+.ttr{display:grid;gap:8px;margin-top:16px}
+.bar{position:relative;height:8px;border-radius:8px;background:rgba(239,233,223,.08)}
+.bar .you{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:8px;background:var(--gold);transition:width .5s}
+.bar .avg{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--glacier)}
+.bar .avg::after{content:"200 ms";position:absolute;top:-18px;left:4px;font-size:11px;color:var(--glacier);white-space:nowrap;font-style:normal}
+.ttm{margin:0;font-size:15px;min-height:1.5em}
+.ttins{display:grid;gap:4px;font-size:15px;line-height:1.45;border-left:3px solid var(--gold);padding-left:14px}
+.ttins b{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.ttins em{font-style:normal;font-weight:600}
+.ttl .missed{color:var(--mute);opacity:.6;text-decoration:line-through;text-decoration-color:rgba(255,122,89,.6)}
+.btn:disabled{opacity:.35;cursor:default}
+.lay{display:grid;gap:12px}
+.lq{font-family:var(--voice);font-style:italic;font-size:30px;margin:0}
+.lr{display:grid;gap:2px;border-left:3px solid var(--line);padding-left:14px;transition:opacity .6s,max-height .6s;max-height:120px}
+.lr span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.lr b{font-weight:500;font-size:18px}
+#lf{border-left-color:var(--gold)}
+.lr.hid{opacity:0;max-height:0;overflow:hidden}
+.fm{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.fbar{height:10px;border-radius:10px;background:rgba(239,233,223,.08);overflow:hidden}
+.fbar i{display:block;height:100%;width:70%;border-radius:10px;transition:width .5s,background .5s}
+.facewrap{display:grid;gap:16px}
+.fc .chip{min-width:0}
+.lab{display:grid;gap:10px}
+.lv{text-align:left;border:1px solid var(--line);background:transparent;color:var(--mute);border-radius:12px;padding:14px 16px;font-size:18px;cursor:pointer}
+.lv small{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px}
+.lv.on{color:var(--paper);border-color:var(--paper)}
+.alarm{display:grid;gap:8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.abar{height:10px;border-radius:10px;background:rgba(239,233,223,.08);overflow:hidden}
+.abar i{display:block;height:100%;width:90%;transition:width .6s,background .6s}
+.mt{display:grid;gap:10px}
+.mr{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;border-bottom:1px solid var(--line);padding-bottom:10px}
+.mq{font-family:var(--voice);font-style:italic;font-size:20px}
+.btn.sm{padding:6px 14px;font-size:14px}
+.btn.picked{background:var(--paper);color:var(--ink)}
+.mres{grid-column:1/-1;font-size:13px;min-height:1em}
+.mres.ok{color:var(--gold)}.mres.no{color:var(--ember)}
+@media (max-width:960px){.tgrid{grid-template-columns:1fr}}
+.widget .seg{justify-self:start}
+.hf{display:grid;gap:8px}
+.hfo,.hfm{display:grid;grid-template-columns:90px 1fr;gap:12px;align-items:baseline}
+.hfo span,.hfm span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);text-align:right}
+.hfm b{font-weight:500;font-size:17px}
+.hfo b{font-weight:400;font-size:16px;color:var(--glacier);filter:blur(6px);opacity:.5;transition:filter .5s,opacity .5s}
+.widget.full .hfo b{filter:none;opacity:1}
+.room{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.seat{position:relative;height:74px;border-radius:12px;background:rgba(23,21,28,.7);display:grid;place-items:center;padding:6px}
+.seat i{width:16px;height:16px;border-radius:50%;background:rgba(239,233,223,.25)}
+.seat span{position:absolute;inset:6px;display:grid;place-items:center;text-align:center;font-family:var(--voice);font-style:italic;font-size:13px;line-height:1.15;opacity:0;transition:opacity .5s}
+.seat.think i{opacity:.15}.seat.think span{opacity:1}
+.seat.me{background:rgba(232,195,122,.18);outline:1px solid var(--gold)}
+.seat.me span{font-family:var(--body);font-style:normal;font-weight:700;color:var(--gold);font-size:14px}
+.bycount{margin:0;font-size:14px;color:var(--mute);font-variant-numeric:tabular-nums}
+.byscript{margin:0;font-family:var(--voice);font-style:italic;font-size:22px;min-height:1.3em;color:var(--gold)}
+.spot2{position:relative;display:flex;justify-content:space-between;padding:10px 18px;border-radius:999px;background:rgba(23,21,28,.7);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.sdot{position:absolute;top:50%;width:46px;height:46px;margin-top:-23px;border-radius:50%;background:radial-gradient(circle,rgba(232,195,122,.5),transparent 70%);transition:left .8s cubic-bezier(.6,0,.2,1)}
+.sdot.them{left:6px}.sdot.you{left:calc(100% - 52px)}
+.sr{margin:10px 0 0;font-size:16px;line-height:1.4}
+.sr.bad{color:var(--ember)}.sr.good{color:var(--gold)}
+.wk{display:grid;gap:8px;min-height:120px}
+.wkl{display:grid;grid-template-columns:70px 1fr;gap:12px;align-items:baseline}
+.wkl span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);text-align:right}
+.wkl b{font-weight:500}
+.wkw{font-weight:500;font-size:15px;text-transform:none;letter-spacing:0;color:var(--paper)}
+.apc .chip{min-width:0}
+.apc .chip.flip{background:rgba(232,195,122,.12);border-color:var(--gold);border-style:solid}
+.apc .badc{border-color:rgba(255,122,89,.5)}
+.apc .badc.flip{background:rgba(255,122,89,.15);border-color:var(--ember)}
+.apw{font-weight:500;font-size:15px;text-transform:none;letter-spacing:0;color:var(--paper)}
+@media (max-width:560px){.room{grid-template-columns:repeat(4,1fr)}}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px dashed rgba(239,233,223,.32);background:transparent;color:var(--paper);border-radius:10px;padding:9px 14px;font-size:15px;cursor:pointer;text-align:left;transition:background .2s,border-color .2s}
+.chip:hover{border-color:rgba(239,233,223,.6)}
+details.srcs{font-size:13px;color:var(--mute);max-width:70ch}
+details.srcs summary{cursor:pointer}
+details.srcs ul{padding-left:18px;margin:10px 0 0;display:grid;gap:4px}
+@media (max-width:700px){.acts{grid-template-columns:1fr}}
+.insight .try p{font-size:17px}
+
+/* recap */
+.recap{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.rc{border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;background:rgba(34,31,41,.55)}
+.rc time{font-size:12px;color:var(--gold);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.06em}
+.rc b{font-family:var(--display);font-size:19px;line-height:1.2;font-weight:700}
+.rc span{font-size:13px;color:var(--mute)}
+.rc .mk{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.rc .mk.y{color:var(--gold)}.rc .mk.n{color:var(--ember)}.rc .mk.s{color:var(--mute)}
+h2.state{font-family:var(--display);font-weight:700;font-size:clamp(30px,4.6vw,58px);line-height:1;letter-spacing:-.03em;margin:0;max-width:20ch;text-wrap:balance}
+.sign{font-size:15px;color:var(--mute)}
+
+nav{position:fixed;left:0;right:0;bottom:0;height:64px;z-index:20;display:flex;align-items:center;gap:16px;padding:0 clamp(16px,4vw,40px);border-top:1px solid var(--line);background:rgba(23,21,28,.86);backdrop-filter:blur(8px)}
+.where{display:flex;align-items:baseline;gap:10px;min-width:0;flex:1}
+.where b{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.where small{color:var(--mute);font-variant-numeric:tabular-nums;font-size:13px}
+.ticks{display:flex;gap:5px}
+.ticks i{width:16px;height:3px;border-radius:3px;background:rgba(239,233,223,.14);transition:background .4s}
+.ticks i.done{background:rgba(239,233,223,.45)}.ticks i.now{background:var(--gold)}
+.navb{display:flex;gap:8px;flex:1;justify-content:flex-end}
+.navb button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--paper);cursor:pointer;font-size:18px}
+.navb button:hover{border-color:var(--paper)}
+.navb button:disabled{opacity:.25;cursor:default}
+#toast{position:fixed;top:22px;left:50%;transform:translate(-50%,-20px);z-index:50;background:var(--paper);color:var(--ink);padding:12px 22px;border-radius:999px;font-family:var(--voice);font-style:italic;font-size:20px;opacity:0;transition:opacity .5s,transform .5s;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
+#toast.in{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:960px){.grid2{grid-template-columns:1fr}.recap{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){
+  .ln{grid-template-columns:1fr;gap:2px}.ln .who{text-align:left}
+  .ticks{display:none}.recap{grid-template-columns:1fr}
+  .tx.s3{font-size:26px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="glow" aria-hidden="true"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<section class="scene" id="intro" aria-label="Start">
+  <div class="wrap">
+    <div class="kicker">A lesson on everyday communication</div>
+    <h1 class="title">Did you<br><span>catch</span> that?</h1>
+    <div class="voice md" id="v0" aria-live="polite"></div>
+    <div class="acts reveal" id="day0"></div>
+    <div class="row reveal" id="go0"><button class="btn solid" id="start">Start the week</button></div>
+  </div>
+</section>
+
+<section class="scene" id="recap" aria-label="Your day, replayed">
+  <div class="wrap wide">
+    <div class="label">Your week, replayed</div>
+    <h2 class="state reveal" id="rh">Small moments. None of them dramatic.</h2>
+    <div class="voice sm" id="vr" aria-live="polite"></div>
+    <div class="recap" id="rgrid"></div>
+  </div>
+</section>
+
+<section class="scene" id="close" aria-label="Before you go">
+  <div class="wrap">
+    <div class="voice md" id="vc" aria-live="polite"></div>
+    <div class="voice md" id="vc2" aria-live="polite"></div>
+    <details class="srcs reveal" id="srcs"><summary>Where the research comes from</summary><ul id="srclist"></ul></details>
+    <div class="row reveal" id="endc"><button class="btn" id="again">Start the week again</button><span class="sign">Did You Catch That?</span></div>
+  </div>
+</section>
+
+<nav aria-label="Presentation">
+  <div class="where"><b id="where">Start</b><small id="count"></small></div>
+  <div class="ticks" id="ticks"></div>
+  <div class="navb"><button id="prev" aria-label="Previous">&larr;</button><button id="next" aria-label="Next">&rarr;</button></div>
+</nav>
+
+<script>
+(() => {
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = (s, r = document) => r.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const ABORT = Symbol('abort');
+let token = 0, cur = 0, rush = false, busy = 0;
+const caret = document.createElement('span'); caret.className = 'caret';
+const NL = { nl: 1 };
+const stats = { start: Date.now(), away: 0, ans: [] };
+const show = el => el.classList.add('in');
+
+const chk = tk => { if (tk !== token) throw ABORT; };
+const W = async (ms, tk) => { if (!RM && !rush) await sleep(ms); chk(tk); };
+async function typeText(el, text, tk, sp = 1) {
+  const tn = document.createTextNode(''); el.append(tn, caret);
+  for (const ch of text) {
+    chk(tk); tn.data += ch;
+    if (RM || rush) continue;
+    let d = (20 + Math.random() * 30) * sp;
+    if (',;'.includes(ch)) d += 150; else if ('.?!…—'.includes(ch)) d += 210;
+    await sleep(d);
+  }
+  chk(tk);
+}
+async function say(el, ops, tk, append = false) {
+  if (!append) el.innerHTML = '';
+  let p = document.createElement('p'); el.appendChild(p);
+  if (!RM && !rush) { const d = document.createElement('span'); d.className = 'dots'; d.innerHTML = '<i></i><i></i><i></i>'; p.appendChild(d); await sleep(480 + Math.random() * 360); d.remove(); chk(tk); }
+  for (const op of ops) {
+    chk(tk);
+    if (typeof op === 'number') { await W(op, tk); continue; }
+    if (op.nl) { p = document.createElement('p'); el.appendChild(p); continue; }
+    if (op.cls) { p.classList.add(op.cls); continue; }
+    await typeText(p, op, tk);
+  }
+}
+function run(tk, fn) {
+  busy = tk;
+  return Promise.resolve().then(() => fn(tk)).catch(e => { if (e !== ABORT) console.error(e); })
+    .finally(() => { if (busy === tk) { busy = 0; rush = false; } });
+}
+
+/* attention light */
+const glow = $('#glow'); const G = { x: innerWidth / 2, y: innerHeight / 2, tx: innerWidth / 2, ty: innerHeight / 2 };
+addEventListener('pointermove', e => { G.tx = e.clientX; G.ty = e.clientY; }, { passive: true });
+(function lg() { const k = RM ? 1 : .14; G.x += (G.tx - G.x) * k; G.y += (G.ty - G.y) * k; glow.style.transform = `translate(${G.x}px,${G.y}px)`; requestAnimationFrame(lg); })();
+/* grain */
+(() => { const c = document.createElement('canvas'), s = 160; c.width = c.height = s; const x = c.getContext('2d'), d = x.createImageData(s, s);
+  for (let i = 0; i < d.data.length; i += 4) { const v = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255; }
+  x.putImageData(d, 0, 0); const g = document.createElement('div'); g.id = 'grain'; g.setAttribute('aria-hidden', 'true'); g.style.backgroundImage = `url(${c.toDataURL()})`; document.body.appendChild(g); })();
+/* the page notices when you leave */
+const toastEl = $('#toast'); let tt, hiddenAt = null;
+function toast(m) { toastEl.textContent = m; show(toastEl); clearTimeout(tt); tt = setTimeout(() => toastEl.classList.remove('in'), 4200); }
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { hiddenAt = Date.now(); return; }
+  if (!hiddenAt) return; const s = Math.round((Date.now() - hiddenAt) / 1000); hiddenAt = null; if (s < 2) return;
+  stats.away++; toast(stats.away === 1 ? `You were gone for ${s} seconds. I noticed. People do too.` : `Away again. ${s} seconds this time.`);
+});
+
+/* ---------- the eight moments ---------- */
+const ACTS = ['Your noise', 'Their turn', 'Your words'];
+const M = [
+/* ---------- ACT 1: YOUR NOISE ---------- */
+{ act: 0, time: 'Mon · 7:48 AM', place: 'Train, northbound', title: 'The phone call', meter: true,
+  async play(st, tk) {
+    st.meter(15);
+    await st.line('Marco · on a call', "Hello? Yeah, I'm on the train.", tk, { tcls: 's1' }); st.meter(40); await W(500, tk);
+    await st.line('Marco · on a call', "NO, tell him the loan didn't go through.", tk, { tcls: 's2' }); st.meter(68); await W(400, tk);
+    await st.line('Woman by the door', 'I did not need to know that.', tk, { th: 1 }); await W(300, tk);
+    await st.line('Marco · on a call', "BECAUSE MY CARD IS MAXED OUT, THAT'S WHY!", tk, { tcls: 's3' }); st.meter(96); await W(400, tk);
+    await st.line('Student', "can't focus on her reviewer anymore", tk, { th: 1 }); await W(400, tk);
+    await st.line('Marco · on a call', 'Okay, okay. Bye. Love you.', tk, { tcls: 's1' }); st.meter(25);
+  },
+  q: ["Marco shouldn't take calls on the train at all.", 'The whole carriage got pulled into a call nobody joined, and he had no idea.', "Nothing. It's a public place, people make calls."], a: 1,
+  lands: 'Everyone nearby lost their focus, and Marco gave away private details without meaning to.',
+  why: "Hearing half a phone call is harder to ignore than a full conversation, because your brain can't predict what comes next.",
+  src: 'Emberson et al., Psychological Science, 2010',
+  instead: '“I’ll call you back when I’m off the train.” Or keep it short and low.',
+  rule: 'Your voice travels further than you think.' },
+
+{ act: 0, time: 'Mon · 12:10 PM', place: 'Office pantry', title: 'Lunch noise', meter: true,
+  async play(st, tk) {
+    await st.line('Ben', 'Mm. Did you watch the game last night?', tk);
+    st.sfx('crunch', 62, 6, 22, -6); st.meter(35); await W(500, tk);
+    st.sfx('CRUNCH', 14, 36, 34, 4); st.meter(55); await W(400, tk);
+    await st.line('Ben', '(mouth full) Grabe, it was so close!', tk);
+    st.sfx('smack', 70, 44, 26, 8); st.meter(72); await W(350, tk);
+    st.sfx('CRUNCH', 40, 70, 40, -3); st.meter(90); await W(500, tk);
+    await st.line('Kat', 'I can hear every single bite from here.', tk, { th: 1 }); await W(700, tk);
+    await st.line('Kat', "Ah, I think I'll eat at my desk today.", tk); await W(300, tk);
+    await st.line('Ben', 'Oh, okay!', tk); st.sfx('crunch', 78, 82, 20, -8);
+  },
+  q: ['The chewing was pushing Kat away, and Ben had no idea.', 'Kat was being a little antisocial.', "Ben shouldn't bring chips to the office."], a: 0,
+  lands: 'Nobody says anything. People just quietly change where they sit, and who they eat with.',
+  why: 'Loud chewing topped the list of sounds people found disgusting, and about 1 in 5 adults in the UK react strongly to sounds like it.',
+  src: 'Vitoratou et al., PLOS ONE, 2023',
+  instead: 'Mouth closed while chewing. Swallow before you talk.',
+  rule: 'Chew closed. Swallow, then talk.' },
+
+{ act: 0, time: 'Tue · 3:20 PM', place: 'Clinic waiting area', title: 'Speaker on', meter: true,
+  async play(st, tk) {
+    await st.line('Guy in row 2', 'scrolling videos, speaker on, full volume', tk, { th: 1 });
+    const S = [['[video] HAHAHA BRO NO WAY', 8, 8, 24, -4, 40], ['♪ ♪ trending song ♪ ♪', 52, 22, 22, 5, 55], ['WAIT FOR IT… WAIT FOR IT', 18, 46, 28, -2, 72], ['[video] HAHAHAHA', 60, 58, 30, 6, 88], ['ding ding ding', 30, 78, 22, -7, 95]];
+    for (const [t, x, y, sz, r, mv] of S) { st.sfx(t, x, y, sz, r); st.meter(mv); await W(420, tk); }
+    await st.line('Nurse', 'Mrs. Santos? …Mrs. Santos?', tk, { cls: 'quiet' }); await W(600, tk);
+    await st.line('Mrs. Santos, 74', 'Did they call me already?', tk, { th: 1 }); await W(400, tk);
+    await st.line('Nurse', 'Okay, next. Mr. Reyes.', tk, { cls: 'quiet' });
+  },
+  q: ['The nurse should have called louder.', "He was bored. It's a long wait.", 'His videos drowned out the room, and an elderly patient missed her name.'], a: 2,
+  lands: 'One phone set the volume for the whole room. Mrs. Santos waits another hour.',
+  why: "To the person holding the phone it's background noise. To everyone else, it's the loudest thing in the room.",
+  src: '',
+  instead: 'Earphones, or mute it and turn on captions.',
+  rule: 'Shared space, shared volume.' },
+
+/* ---------- ACT 2: THEIR TURN ---------- */
+{ act: 1, time: 'Wed · 9:30 AM', place: 'Team meeting', title: 'The interruption',
+  async play(st, tk) {
+    const ana = await st.line('Ana', 'I think the campaign underperformed because we launched before the—', tk);
+    st.shove(ana);
+    await st.line('Jules', "Yeah, yeah, the timing was off. Anyway, next quarter let's just go bigger.", tk, { sp: .7 }); await W(600, tk);
+    await st.line('Manager', "Good point, Jules. Let's do that.", tk); await W(700, tk);
+    await st.line('Ana', "That's not what I was going to say.", tk, { th: 1 });
+  },
+  q: ['Ana took too long to get to her point.', 'Jules made a good point, and the meeting moved on.', 'Ana got cut off, and her real point never made it into the room.'], a: 2,
+  lands: 'Jules got credit for half of Ana’s sentence. Ana will say less next meeting.',
+  why: 'People who keep getting cut off start squeezing their ideas into polished sound bites instead of thinking out loud.',
+  src: 'Workplace interruption study, Harvard Business Review, 2026',
+  instead: 'Let the sentence land. If you jumped in, hand it back: “Sorry, go on.”',
+  rule: 'Let the sentence finish.' },
+
+{ act: 1, time: 'Wed · 12:35 PM', place: 'Lunch with a friend', title: 'The story swap',
+  async play(st, tk) {
+    const m = await st.line('Mia', "My dad's back in the hospital. I've been going every night after work, and I'm just… tired.", tk); st.spot(m); await W(800, tk);
+    const j = await st.line('Jo', "Oh my gosh, same! When my tita was confined last year, I literally didn't sleep for two weeks.", tk, { sp: .75 });
+    st.spot(j); m.classList.add('dim');
+    await st.line('Jo', "And the billing? Don't get me started. They charged us for everything, even the—", tk, { sp: .75 }); await W(700, tk);
+    const m2 = await st.line('Mia', 'Yeah… that sounds really hard.', tk); m2.classList.add('dim'); await W(600, tk);
+    await st.line('Mia', "So now I'm the one comforting her.", tk, { th: 1 });
+  },
+  q: ['Jo was relating, which is a kind of support.', 'Mia opened up, and Jo turned it into her own story.', 'Mia should have talked to her family instead.'], a: 1,
+  lands: 'Mia learned that telling Jo something means hearing about Jo.',
+  why: 'Sociologist Charles Derber calls this a “shift response”: it moves attention from the speaker to you. A “support response” asks them to tell you more.',
+  src: 'Charles Derber, The Pursuit of Attention',
+  instead: '“How’s he doing? And how are you holding up?” Your story can wait.',
+  rule: 'Keep the spotlight on the one who opened up.' },
+
+{ act: 1, time: 'Thu · 6:40 PM', place: 'Convenience store', title: 'The cashier',
+  async play(st, tk) {
+    const c1 = await st.line('Cashier', 'Good evening po! Do you have a member card?', tk);
+    await st.line('Customer · on a call', "Yeah, I'm at the store. What do you want?", tk, { cls: 'phone' }); st.ignored(c1); await W(500, tk);
+    const c2 = await st.line('Cashier', '₱248 po, sir.', tk);
+    await st.line('Customer · on a call', 'drops the money on the counter without looking up', tk, { th: 1, cls: 'phone' }); st.ignored(c2); await W(500, tk);
+    const c3 = await st.line('Cashier', 'Thank you po! Ingat!', tk); await W(900, tk); st.ignored(c3); await W(600, tk);
+    await st.line('Cashier', 'Third one like that this hour.', tk, { th: 1 });
+  },
+  q: ['The cashier spoke to him three times and got nothing back.', 'He was busy. Nothing wrong with that.', 'The cashier was being too chatty.'], a: 0,
+  lands: 'He wasn’t loud or mean. He just treated a person like a vending machine.',
+  why: 'Customers who smiled and chatted briefly with the barista left in a better mood than those who kept it quick. A small hello helps both people.',
+  src: 'Sandstrom & Dunn, Social Psychological and Personality Science, 2014',
+  instead: 'Pause the call for five seconds. Look up. “Thanks po, ingat din.”',
+  rule: 'See the people serving you.' },
+
+{ act: 1, time: 'Thu · 8:15 PM', place: 'Family dinner', title: 'Half there',
+  async play(st, tk) {
+    await st.line('Lola', 'When your Lolo and I first met, he was selling pandesal outside the church.', tk);
+    await st.line('Paolo', 'Mm-hmm.', tk, { cls: 'phone' }); st.blue();
+    await W(400, tk);
+    await st.line('Lola', 'Every Sunday he gave me one for free. For a whole year.', tk, { cls: 'quiet' });
+    await st.line('Paolo', 'Haha, nice.', tk, { cls: 'phone' }); await W(1100, tk);
+    await st.line('Lola', '…You’ve heard this one already, ano?', tk, { cls: 'quieter' }); await W(900, tk);
+    await st.line('Paolo', 'Huh? Sorry, La, what was that?', tk, { cls: 'phone' });
+  },
+  q: ['Lola tells the same stories a lot.', 'Nothing. Paolo was answering her.', 'Paolo was at the table but not listening, and Lola could tell.'], a: 2,
+  lands: 'Lola cut her story short. Next time, she might not tell it at all.',
+  why: 'When a phone was just sitting in view, people rated the conversation as less close and their partner as less understanding.',
+  src: 'Misra et al., “The iPhone Effect,” Environment and Behavior, 2014',
+  instead: 'Phone face-down. Need a second? “Wait lang, La.” Then put it away.',
+  rule: 'Be where you are.' },
+
+/* ---------- ACT 3: YOUR WORDS ---------- */
+{ act: 2, time: 'Sat · 2:00 PM', place: 'Family reunion', title: 'The greeting',
+  async play(st, tk) {
+    await st.line('Tita Baby', 'Ay, Bea! Tumaba ka, ah!', tk, { tcls: 's1' }); await W(400, tk);
+    await st.line('Bea', 'Hi, Tita… okay naman po.', tk, { cls: 'quiet' }); await W(400, tk);
+    await st.line('Tito Ramon', 'Kaya pala! Masarap siguro ulam sa Manila. Joke lang!', tk);
+    st.sfx('HAHAHA', 58, 30, 30, -4); await W(250, tk); st.sfx('hahaha', 20, 52, 22, 6); await W(700, tk);
+    await st.line('Bea', "Third person today who said that before “hello.”", tk, { th: 1 }); await W(700, tk);
+    await st.line('Bea', 'puts the second serving back', tk, { th: 1 });
+  },
+  q: ["It's just how Titas say hello. Nobody meant harm.", 'Bea should laugh along. It was a joke.', '“You gained weight” was the first thing she heard, again, and it landed harder than anyone meant.'], a: 2,
+  lands: 'Bea smiles, eats less, and quietly plans to skip the next reunion.',
+  why: 'In a 2025 nationwide survey, 52% of Filipinos aged 18 to 24 said body image was hurting their mental health.',
+  src: 'Arkipelago Analytics survey, as reported by the Inquirer and Manila Bulletin, 2025',
+  instead: 'Start with anything else. “Bea! I missed you. How’s work?”',
+  rule: 'Greet the person, not the body.' },
+
+{ act: 2, time: 'Sat · 4:30 PM', place: 'Barkada group chat', title: 'Too much heat', chat: true,
+  async play(st, tk) {
+    st.chatHead('Outing GC', '5 members');
+    await st.bub('them', "Guys, I forgot to book the resort. It's fully booked now. Sorry.", tk, 'Carlo'); await W(900, tk);
+    await st.bub('me', 'ARE YOU SERIOUS??? We reminded you FIVE TIMES.', tk, 'Jo', 'hot'); await W(250, tk);
+    await st.bub('me', 'This is SO typical of you. Never mind, I’ll do everything myself like always.', tk, 'Jo', 'hot');
+    await W(900, tk);
+    st.typing(true); await W(1400, tk); st.typing(false); await W(700, tk);
+    st.note('Nobody replied for 40 minutes.');
+  },
+  q: ['Carlo deserved it. He was reminded five times.', 'Jo had a fair point, but the way she said it turned a booking problem into a fight.', 'Group chats are a bad place to plan anything.'], a: 1,
+  lands: 'Carlo goes quiet. Everyone else is too awkward to suggest a fix.',
+  why: 'Readers guess the tone of a text right only about as often as a coin flip, and senders are sure they came across fine.',
+  src: 'Kruger, Epley et al., Journal of Personality and Social Psychology, 2005',
+  instead: '“Ugh, that’s frustrating. Can we check two other resorts tonight?”',
+  rule: 'Too much emotion buries the point.' },
+
+{ act: 2, time: 'Sat · 11:02 PM', place: 'Late-night chat', title: 'Too much logic', chat: true,
+  async play(st, tk) {
+    st.chatHead('Mia', 'Jo');
+    await st.bub('them', 'He broke up with me. Over text. After three years.', tk); await W(500, tk);
+    await st.bub('them', "I can't stop crying.", tk); await W(1000, tk);
+    await st.bub('me', 'Honestly, the signs were there. He stopped posting you months ago.', tk); await W(300, tk);
+    await st.bub('me', 'Better now than after the wedding. Block him and focus on yourself.', tk, '', 'cold');
+    st.meta('Seen 11:04 PM'); await W(700, tk);
+    for (let i = 0; i < 2; i++) { st.typing(true); await W(1300, tk); st.typing(false); await W(900, tk); }
+    st.note('Mia stopped typing.');
+  },
+  q: ["Jo was being honest. That's what friends are for.", 'Mia needed comfort, and she got an analysis.', 'Mia should have called instead of texting.'], a: 1,
+  lands: 'Mia stops typing. Next time something happens, she’ll tell someone else first.',
+  why: 'When people were upset, they found “that sounds really hard” more comforting than being told to see things differently.',
+  src: 'Sahi et al., UCLA, 2022, via The New York Times',
+  instead: '“I’m so sorry. That’s awful. Want me to call?” The advice can wait.',
+  rule: 'Too much logic misses the person.' },
+
+{ act: 2, time: 'Sun · 10:15 AM', place: 'The next morning', title: 'The sorry', chat: true,
+  async play(st, tk) {
+    st.chatHead('Mia', 'Jo');
+    await st.bub('me', 'Hey. Sorry if what I said last night upset you.', tk); await W(400, tk);
+    await st.bub('me', 'I was just being honest. You know me naman.', tk); await W(1200, tk);
+    await st.bub('them', 'Okay.', tk);
+    st.meta('Seen 10:21 AM'); await W(900, tk);
+    st.note('Mia read it as: so it’s my fault I got hurt.');
+  },
+  q: ['Jo apologized. That should settle it.', 'Jo said sorry but took no responsibility, so it felt like blame.', 'Mia is overreacting to a simple message.'], a: 1,
+  lands: 'Mia hears “you’re too sensitive,” wrapped in the word sorry.',
+  why: 'In a study of six parts of an apology, taking responsibility mattered most. “Sorry if you felt that way” skips it.',
+  src: 'Lewicki, Polin & Lount, Negotiation and Conflict Management Research, 2016',
+  instead: '“I’m sorry I lectured you when you needed comfort. That wasn’t fair.”',
+  rule: 'Own it. No “if,” no “but.”' }
+];
+
+/* ---------- theory slides: the idea behind the moments ---------- */
+const T = [
+{ after: 0, name: 'The halfalogue', origin: 'Emberson et al., Cornell, 2010',
+  plain: 'Hearing one side of a phone call is more distracting than hearing two people talk. Your brain keeps guessing the missing half and can’t switch off. People in the study did worse on attention tasks while overhearing half a call.',
+  widget: 'half', src: 'Emberson, Lupyan, Goldstein & Spivey, Psychological Science, 2010',
+  next: 'So it wasn’t nosiness. The whole carriage was forced to listen.' },
+{ after: 1, name: 'Habituation', origin: 'Neuroscience of attention',
+  plain: 'Your brain stops reacting to sounds it can predict, and nothing is more predictable to you than your own noise. You tuned it out long ago. The people around you never did.',
+  widget: 'habit', src: 'Covey et al., European Journal of Neuroscience, reported by LiveScience',
+  next: 'Ben stopped hearing his chewing long ago. Kat never did.' },
+{ after: 2, name: 'The bystander effect', origin: 'Darley & Latané, 1968',
+  plain: 'The more people who witness a problem, the less likely any one of them steps in. Each person quietly assumes someone else will. Psychologists call it diffusion of responsibility.',
+  widget: 'bystander', src: 'Darley & Latané, Journal of Personality and Social Psychology, 1968',
+  next: 'A full waiting room, and nobody said a word. Everyone was waiting for someone else.' },
+{ after: 3, name: 'Turn-taking', origin: 'Conversation analysis · Stivers et al., 2009',
+  plain: 'Across ten languages, researchers found the same pattern: people avoid overlapping and keep silences short. The usual gap between turns is about 200 milliseconds, so we start planning our reply while the other person is still talking.',
+  widget: 'turn', src: 'Stivers et al., Proceedings of the National Academy of Sciences, 2009; Scientific American',
+  next: 'Jules didn’t plan to cut Ana off. His reply was ready before her sentence was.' },
+{ after: 4, name: 'Shift and support', origin: 'Charles Derber, The Pursuit of Attention',
+  plain: 'Derber studied everyday conversations and found two kinds of replies. A shift response turns the attention to you. A support response keeps it on the speaker, usually with a question. The shift often sounds like empathy: “Same! When I…”',
+  widget: 'shift', src: 'Charles Derber, The Pursuit of Attention; Kate Murphy, You’re Not Listening',
+  next: 'Jo meant well. She answered with a shift when Mia needed support.' },
+{ after: 5, name: 'Weak ties', origin: 'Sandstrom & Dunn, 2014',
+  plain: 'Acquaintances and people we meet in passing are called weak ties. People felt happier and more connected on days with more of these small exchanges. A smile and one sentence at the counter counts.',
+  widget: 'weak', src: 'Sandstrom & Dunn, Personality and Social Psychology Bulletin, 2014; Social Psychological and Personality Science, 2014',
+  next: 'Five seconds of eye contact would have helped both of them.' },
+{ after: 6, name: 'Active listening', origin: 'Carl Rogers & Richard Farson, 1957',
+  plain: 'Every message has two layers: what is said, and the feeling under it. Rogers called catching both “listening for total meaning.” Most of us only answer the top layer, or don’t answer at all.',
+  widget: 'layers', src: 'Rogers & Farson, “Active Listening,” University of Chicago, 1957',
+  next: 'Lola asked, “You’ve heard this one already, ano?” The words were a question. The feeling was hurt.' },
+{ after: 7, name: 'Face', origin: 'Politeness theory · Brown & Levinson, 1987',
+  plain: '“Face” is the self-image each of us wants others to respect. Criticism, teasing and remarks about someone’s body are what the theory calls face-threatening acts. Close to what we call hiya: it stings most when others are watching.',
+  widget: 'face', src: 'Brown & Levinson, Politeness: Some Universals in Language Usage, 1987, building on Goffman',
+  next: 'Tita Baby meant hello. Bea heard a comment on her body, in front of everyone.' },
+{ after: 8, name: 'Affect labeling', origin: 'Lieberman et al., UCLA, 2007',
+  plain: 'Putting a feeling into words calms the brain’s alarm system. In brain scans, naming an emotion lowered activity in the amygdala. Too much emotion usually means acting the feeling out instead of naming it.',
+  widget: 'label', src: 'Lieberman et al., Psychological Science, 2007',
+  next: 'Jo acted her frustration out. If she had named it, the group might have helped fix it.' },
+{ after: 9, name: 'Optimal matching', origin: 'Cutrona & Russell, 1990',
+  plain: 'Support helps most when it matches what the person needs. Some moments call for emotional support, like empathy and reassurance. Others call for informational support, like advice. Too much logic is usually advice given when comfort was needed.',
+  widget: 'match', src: 'Cutrona & Russell, 1990, in Social Support: An Interactional View',
+  next: 'Mia needed comfort. Jo sent advice.' },
+{ after: 10, name: 'Anatomy of an apology', origin: 'Lewicki, Polin & Lount, 2016',
+  plain: 'Researchers tested six parts of an apology. Taking responsibility mattered most, then offering to make it right. Asking for forgiveness mattered least. Adding “if” or “but” quietly cancels the rest.',
+  widget: 'apology', src: 'Lewicki, Polin & Lount, Negotiation and Conflict Management Research, 2016',
+  next: 'Jo used the word sorry. She left out the part that counts.' }
+];
+
+function buildWidget(type, host) {
+  const w = document.createElement('div'); w.className = 'widget'; host.appendChild(w);
+  let timer = null;
+  const api = { start() {}, stop() { clearInterval(timer); timer = null; } };
+  if (type === 'habit') {
+    w.innerHTML = `<div class="hab"><div class="hp" data-who="you"><span class="hl">What you hear</span><div class="pulse"></div><span class="hc">crunch</span></div>
+      <div class="hp" data-who="them"><span class="hl">What everyone else hears</span><div class="pulse"></div><span class="hc">crunch</span></div></div>
+      <p class="wcap">The same sound, over and over. Watch which side fades.</p>`;
+    const [you, them] = w.querySelectorAll('.hp');
+    api.start = () => { api.stop(); let n = 0; you.style.setProperty('--o', 1);
+      const beat = () => { n++; for (const p of [you, them]) { const r = document.createElement('i'); p.querySelector('.pulse').appendChild(r); setTimeout(() => r.remove(), 1400); }
+        you.style.setProperty('--o', Math.max(.08, 1 - n * .1).toFixed(2)); if (n >= 12) n = 0; };
+      beat(); timer = setInterval(beat, RM ? 1400 : 800); };
+  }
+  if (type === 'half') {
+    const P = [['Where are you na?', "Hello? Yeah, I'm on the train."], ['Did the bank call back?', "NO, tell him the loan didn't go through."], ['Why not?', "BECAUSE MY CARD IS MAXED OUT, THAT'S WHY!"], ['Okay, calm down. Talk later.', 'Okay, okay. Bye. Love you.']];
+    w.innerHTML = `<div class="seg" role="group" aria-label="View"><button aria-pressed="true" data-v="half">What the train hears</button><button aria-pressed="false" data-v="full">The whole call</button></div><div class="hf"></div><p class="wcap">With half the call missing, your brain keeps filling in the blanks.</p>`;
+    const hf = $('.hf', w);
+    P.forEach(([o, m]) => { const a = document.createElement('div'); a.className = 'hfo'; a.innerHTML = '<span>Other end</span><b></b>'; $('b', a).textContent = o; const b = document.createElement('div'); b.className = 'hfm'; b.innerHTML = '<span>Marco</span><b></b>'; $('b', b).textContent = m; hf.append(a, b); });
+    const setv = v => { w.classList.toggle('full', v === 'full'); w.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v))); };
+    w.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => setv(b.dataset.v)));
+    api.start = () => setv('half');
+  }
+  if (type === 'bystander') {
+    const thoughts = ['Someone will say something.', 'Not my business.', 'The nurse will handle it.', 'Baka magalit siya.', 'I’m only here for a bit.', 'Others look fine with it.'];
+    w.innerHTML = `<div class="room"></div><p class="bycount"></p><div class="row"><button class="btn solid" id="byb">Be the one who says it</button></div><p class="byscript"></p>`;
+    const room = $('.room', w), cnt = $('.bycount', w), scr = $('.byscript', w);
+    for (let i = 0; i < 12; i++) { const s = document.createElement('div'); s.className = 'seat'; s.innerHTML = '<i></i><span></span>'; room.appendChild(s); }
+    const seats = [...room.children];
+    api.start = () => { api.stop(); seats.forEach(s => { s.classList.remove('think', 'me'); $('span', s).textContent = ''; }); scr.textContent = ''; cnt.textContent = '12 people can hear it. 0 have said anything.'; $('#byb', w).disabled = false;
+      let n = 0; const idx = [1, 4, 6, 9, 10, 2]; timer = setInterval(() => { if (n >= idx.length) { api.stop(); return; } const s = seats[idx[n]]; $('span', s).textContent = thoughts[n]; s.classList.add('think'); n++; }, RM ? 200 : 900); };
+    $('#byb', w).addEventListener('click', () => { api.stop(); seats[7].classList.add('me'); $('span', seats[7]).textContent = 'You'; seats[7].classList.add('think'); cnt.textContent = '12 people can hear it. 1 said something.'; scr.textContent = '“Sir, sorry po, pwede pakihinaan? They’re calling names.”'; $('#byb', w).disabled = true; });
+  }
+  if (type === 'shift') {
+    const R = [
+      { s: "I'm thinking of quitting my job.", sh: 'Oh, I almost quit last year too. My boss was the worst.', su: "Really? What's making you think about it?" },
+      { s: 'My cat got out last week. Took us three days to find her.', sh: 'My cat never goes out. She’s scared of everything.', su: 'Oh no. Where did you finally find her?' },
+      { s: "I've been so tired lately.", sh: 'Same. I only slept four hours last night.', su: "Since when? What's been keeping you up?" }];
+    w.innerHTML = `<div class="spot2"><span data-p="them">Them</span><span data-p="you">You</span><i class="sdot"></i></div>
+      <div class="tt"><span class="ttw">They say</span><p class="ttl sq"></p><p class="sr"></p></div>
+      <div class="row"><button class="btn" data-r="sh">Reply with a shift</button><button class="btn" data-r="su">Reply with support</button><button class="btn" id="snext">Next line</button></div>`;
+    let r = 0; const dot = $('.sdot', w), sq = $('.sq', w), sr = $('.sr', w);
+    const load = () => { sq.textContent = '“' + R[r].s + '”'; sr.textContent = ''; dot.className = 'sdot them'; };
+    w.querySelectorAll('[data-r]').forEach(b => b.addEventListener('click', () => { const sh = b.dataset.r === 'sh'; sr.textContent = (sh ? 'You: ' : 'You: ') + '“' + (sh ? R[r].sh : R[r].su) + '”' + (sh ? '  · The attention moves to you.' : '  · The attention stays with them.'); dot.className = 'sdot ' + (sh ? 'you' : 'them'); sr.className = 'sr ' + (sh ? 'bad' : 'good'); }));
+    $('#snext', w).addEventListener('click', () => { r = (r + 1) % R.length; load(); });
+    api.start = () => { r = 0; load(); };
+  }
+  if (type === 'weak') {
+    const V = { eff: [['Cashier', '₱248 po.'], ['You', '(hands over the money, eyes on phone)'], ['Cashier', 'Thank you po.']],
+                hum: [['Cashier', '₱248 po.'], ['You', 'Here po. Busy night?'], ['Cashier', 'Grabe po, ang dami. Thank you po!'], ['You', 'Ingat ka mamaya.']] };
+    w.innerHTML = `<div class="seg" role="group" aria-label="Version"><button aria-pressed="true" data-v="eff">Efficient</button><button aria-pressed="false" data-v="hum">Human</button></div><div class="wk"></div>
+      <div class="alarm"><span>How both of you leave</span><div class="abar"><i></i></div><b class="wkw"></b></div>`;
+    const wk = $('.wk', w), ab = $('.abar i', w), wkw = $('.wkw', w);
+    const setv = v => { wk.innerHTML = ''; V[v].forEach(([who, t]) => { const d = document.createElement('div'); d.className = 'wkl'; d.innerHTML = '<span></span><b></b>'; d.children[0].textContent = who; d.children[1].textContent = t; wk.appendChild(d); });
+      ab.style.width = v === 'eff' ? '30%' : '78%'; ab.style.background = v === 'eff' ? 'var(--mute)' : 'var(--gold)'; wkw.textContent = v === 'eff' ? 'Transaction done.' : 'A little lighter, both of you. Same ten seconds.';
+      w.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v))); };
+    w.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => setv(b.dataset.v)));
+    api.start = () => setv('eff');
+  }
+  if (type === 'apology') {
+    const P = [['regret', 'Regret', 'I’m sorry.', 12], ['explain', 'Explanation', 'I was stressed and answered too fast.', 12], ['resp', 'Responsibility', 'That was on me. You needed comfort and I lectured you.', 30], ['repent', 'Won’t repeat it', 'I won’t do that again.', 12], ['repair', 'Repair', 'Can I come over tonight?', 22], ['forgive', 'Ask forgiveness', 'Will you forgive me?', 6]];
+    const BAD = ['bad', 'Add an “if”', '…if you felt that way.', -45];
+    w.innerHTML = `<p class="wcap">Build Jo’s apology. Tap the parts to include.</p><div class="chips apc"></div><div class="tt"><span class="ttw">Jo</span><p class="ttl apt"></p></div>
+      <div class="alarm"><span>How it lands</span><div class="abar"><i></i></div><b class="apw"></b></div>`;
+    const on = new Set(); const apc = $('.apc', w), apt = $('.apt', w), ab = $('.abar i', w), apw = $('.apw', w);
+    const draw = () => { const parts = P.filter(p => on.has(p[0])).map(p => p[2]); if (on.has('bad')) parts.push(BAD[2]);
+      apt.textContent = parts.length ? parts.join(' ') : '(nothing yet)';
+      let v = P.reduce((a, p) => a + (on.has(p[0]) ? p[3] : 0), 0) + (on.has('bad') ? BAD[3] : 0); v = Math.max(0, Math.min(94, v));
+      ab.style.width = Math.max(3, v / 94 * 100) + '%'; ab.style.background = v < 25 ? 'var(--ember)' : v < 60 ? 'var(--gold)' : 'var(--glacier)';
+      apw.textContent = on.has('bad') && v < 40 ? 'Sounds like blame.' : v < 25 ? 'Barely an apology.' : v < 55 ? 'Polite, not convincing.' : v < 80 ? 'Getting there.' : 'Feels real.';
+      apc.querySelectorAll('.chip').forEach(c => c.classList.toggle('flip', on.has(c.dataset.k))); };
+    [...P, BAD].forEach(p => { const c = document.createElement('button'); c.className = 'chip apchip' + (p[0] === 'bad' ? ' badc' : ''); c.dataset.k = p[0]; c.textContent = p[1]; c.addEventListener('click', () => { on.has(p[0]) ? on.delete(p[0]) : on.add(p[0]); draw(); }); apc.appendChild(c); });
+    api.start = () => { on.clear(); on.add('regret'); on.add('bad'); draw(); };
+  }
+  if (type === 'turn') {
+    const lines = [
+      ['So I finally told my manager.', 'That I’m leaving next month.'],
+      ['We got my board exam results this morning.', 'I didn’t pass.', 'By two points.'],
+      ['Guess who I saw at the mall yesterday.', 'Your ex.', 'With your best friend.'],
+      ['I’m okay.', 'I think.', 'Can we talk later?'],
+      ['The meeting went fine.', 'Except for one thing.']
+    ];
+    w.innerHTML = `<div class="ttins"><b>How to play</b><span>A friend is about to tell you something. Press <em>My turn</em> the moment you think they’re done talking. Press <em>Start</em> when you’re ready.</span></div>
+      <div class="tt"><span class="ttw">Friend</span><p class="ttl"><span class="said"></span><span class="missed"></span></p></div>
+      <div class="row"><button class="btn solid" id="tstart">Start</button><button class="btn" id="tgo" disabled>My turn</button></div>
+      <div class="ttr"><div class="bar"><i class="you"></i><i class="avg"></i></div><p class="ttm"></p></div>`;
+    const said = $('.said', w), missed = $('.missed', w), msg = $('.ttm', w), you = $('.bar .you', w), avg = $('.bar .avg', w);
+    const startB = $('#tstart', w), goB = $('#tgo', w);
+    const scale = 1200; avg.style.left = (200 / scale * 100) + '%';
+    let k = 0, runId = 0, state = 'idle', end = 0, segs = [], si = 0;
+    const timers = [];
+    const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+    const clear = () => { timers.forEach(clearTimeout); timers.length = 0; };
+    const reset = () => { clear(); runId++; state = 'idle'; said.textContent = ''; missed.textContent = ''; msg.textContent = ''; you.style.width = '0';
+      goB.disabled = true; startB.disabled = false; startB.textContent = k ? 'Try another' : 'Start'; };
+    api.start = () => { k = 0; reset(); said.textContent = ''; };
+    api.stop = () => { clear(); runId++; };
+    const restText = () => { const cur = segs[si] || []; return segs.slice(si + 1).map(s => s.join(' ')).join(' '); };
+    function playSeg(id) {
+      if (id !== runId) return;
+      const words = segs[si]; let wi = 0; state = 'talking';
+      const step = () => {
+        if (id !== runId) return;
+        if (wi < words.length) { said.textContent += (said.textContent ? ' ' : '') + words[wi++]; later(step, RM ? 140 : 230 + Math.random() * 90); return; }
+        if (si < segs.length - 1) { state = 'pause'; later(() => { si++; playSeg(id); }, 1300 + Math.random() * 1000); }
+        else { state = 'done'; end = performance.now(); }
+      };
+      step();
+    }
+    startB.addEventListener('click', () => {
+      reset(); const line = lines[k++ % lines.length];
+      segs = line.map(s => s.split(' ')); si = 0; startB.disabled = true; goB.disabled = false;
+      const id = runId; later(() => playSeg(id), 700);
+    });
+    goB.addEventListener('click', () => {
+      if (state === 'idle') return;
+      const was = state; clear(); runId++; goB.disabled = true; startB.disabled = false; startB.textContent = 'Try another';
+      if (was === 'done') {
+        const gap = Math.round(performance.now() - end); state = 'idle';
+        you.style.width = Math.min(100, gap / scale * 100) + '%';
+        msg.textContent = gap < 500 ? `${gap} ms after they finished. Close to the 200 ms most conversations run on.`
+          : `${gap} ms after they finished. You waited for the whole thought. Past half a second, studies say a gap can start to sound like hesitation, but here it meant listening.`;
+        return;
+      }
+      state = 'idle'; you.style.width = '0';
+      const rest = segs.slice(si + (was === 'pause' ? 1 : 0)).map((s, j) => j === 0 && was === 'talking' ? '' : s.join(' ')).filter(Boolean).join(' ');
+      const cut = was === 'talking' ? segs[si].slice(said.textContent.split(' ').length - segs.slice(0, si).flat().length).join(' ') : '';
+      missed.textContent = ' ' + [cut, rest].filter(Boolean).join(' ');
+      msg.textContent = was === 'pause'
+        ? 'You took the pause as the end. They were still thinking. The faded words are what you would have missed.'
+        : 'You cut in mid-sentence. The faded words are what you would have missed.';
+    });
+  }
+  if (type === 'layers') {
+    w.innerHTML = `<div class="lay"><p class="lq">“I’m fine. Just tired lang.”</p>
+      <div class="lr"><span>What was said</span><b>She’s tired.</b></div>
+      <div class="lr hid" id="lf"><span>The feeling under it</span><b>Overwhelmed, and hoping someone asks a second time.</b></div></div>
+      <div class="row"><button class="btn solid" id="lbtn">Listen for the whole message</button></div>`;
+    $('#lbtn', w).addEventListener('click', () => $('#lf', w).classList.toggle('hid'));
+    api.start = () => $('#lf', w).classList.add('hid');
+  }
+  if (type === 'face') {
+    const C = [['Tumaba ka, ah!', -30], ['Na-miss kita!', 20], ['Bakit wala ka pang jowa?', -25], ['Ang galing mo sa presentation kanina.', 25], ['Correcting someone in front of the team', -35], ['Asking “Okay ka lang?” in private', 15]];
+    w.innerHTML = `<div class="facewrap"><div class="fm"><span>Face</span><div class="fbar"><i></i></div></div><div class="chips fc"></div></div><p class="wcap">Tap what someone hears. Watch their face.</p>`;
+    const bar = $('.fbar i', w); let v = 70;
+    const set = () => { bar.style.width = v + '%'; bar.style.background = v < 35 ? 'var(--ember)' : v < 60 ? 'var(--gold)' : 'var(--glacier)'; };
+    C.forEach(([t, d]) => { const b = document.createElement('button'); b.className = 'chip'; b.textContent = t; b.addEventListener('click', () => { v = Math.max(5, Math.min(100, v + d)); set(); }); $('.fc', w).appendChild(b); });
+    api.start = () => { v = 70; set(); };
+  }
+  if (type === 'label') {
+    w.innerHTML = `<div class="lab"><button class="lv on" data-v="act"><small>Acting it out</small>ARE YOU SERIOUS??? This is SO typical.</button>
+      <button class="lv" data-v="name"><small>Naming it</small>I’m really frustrated. We were counting on this.</button></div>
+      <div class="alarm"><span>Alarm level, theirs and yours</span><div class="abar"><i></i></div></div>`;
+    const ab = $('.abar i', w);
+    const pick = v => { w.querySelectorAll('.lv').forEach(b => b.classList.toggle('on', b.dataset.v === v)); ab.style.width = v === 'act' ? '92%' : '34%'; ab.style.background = v === 'act' ? 'var(--ember)' : 'var(--gold)'; };
+    w.querySelectorAll('.lv').forEach(b => b.addEventListener('click', () => pick(b.dataset.v)));
+    api.start = () => pick('act');
+  }
+  if (type === 'match') {
+    const Q = [['“I can’t stop crying.”', 'c'], ['“What do I even say to him tomorrow?”', 'a'], ['“I just need to get this off my chest.”', 'c'], ['“Do you know a good lawyer?”', 'a']];
+    w.innerHTML = `<p class="wcap">What does each person need first?</p><div class="mt"></div>`;
+    Q.forEach(([q, ans]) => { const r = document.createElement('div'); r.className = 'mr';
+      r.innerHTML = '<span class="mq"></span><span class="row"><button class="btn sm" data-a="c">Comfort</button><button class="btn sm" data-a="a">Advice</button></span><span class="mres"></span>';
+      $('.mq', r).textContent = q;
+      r.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { const ok = b.dataset.a === ans; r.querySelectorAll('button').forEach(x => x.classList.toggle('picked', x === b)); const res = $('.mres', r); res.textContent = ok ? 'Match' : (ans === 'c' ? 'They needed comfort first' : 'They asked for help'); res.className = 'mres ' + (ok ? 'ok' : 'no'); }));
+      $('.mt', w).appendChild(r); });
+    api.start = () => w.querySelectorAll('.mr').forEach(r => { r.querySelectorAll('button').forEach(x => x.classList.remove('picked')); const res = $('.mres', r); res.textContent = ''; res.className = 'mres'; });
+  }
+  return api;
+}
+
+function makeTheoryScene(t, k) {
+  const s = document.createElement('section'); s.className = 'scene theory'; s.setAttribute('aria-label', t.name);
+  s.innerHTML = `<div class="wrap wide"><div class="label"></div><div class="tgrid">
+    <div class="tl"><div class="t-origin reveal"></div><h2 class="t-name reveal"></h2><p class="t-plain reveal"></p><p class="t-src reveal"></p></div>
+    <div class="tr"><div class="whost reveal"></div><div class="voice sm tnext" aria-live="polite"></div></div></div></div>`;
+  $('.label', s).textContent = `Why it happens · ${M[t.after].title}`;
+  $('.t-origin', s).textContent = t.origin; $('.t-name', s).textContent = t.name; $('.t-plain', s).textContent = t.plain; $('.t-src', s).textContent = 'Source: ' + t.src;
+  const wg = buildWidget(t.widget, $('.whost', s));
+  return { el: s, scene: {
+    async enter(tk) {
+      for (const c of s.querySelectorAll('.tl .reveal')) { show(c); await W(350, tk); }
+      show($('.whost', s)); wg.start();
+      await W(1200, tk);
+      await say($('.tnext', s), [t.next], tk);
+    },
+    leave() { wg.stop(); }
+  }};
+}
+
+/* stage helpers */
+function stageAPI(root) {
+  const lines = $('.lines', root), noise = $('.noise', root), spot = $('.spot', root), mb = $('.db b', root);
+  let typ = null;
+  return {
+    reset() { lines.innerHTML = ''; noise.innerHTML = ''; spot.style.opacity = 0; if (mb) mb.style.width = '0'; root.classList.remove('blue'); typ = null; },
+    async line(who, text, tk, o = {}) {
+      const r = document.createElement('div'); r.className = 'ln' + (o.th ? ' th' : '') + (o.cls ? ' ' + o.cls : '');
+      r.innerHTML = '<span class="who"></span><span class="tx"></span>'; $('.who', r).textContent = who;
+      const tx = $('.tx', r); if (o.tcls) tx.classList.add(o.tcls);
+      lines.appendChild(r); await typeText(tx, o.th ? '(' + text + ')' : text, tk, o.sp || 1); return r;
+    },
+    async bub(side, text, tk, name = '', cls = '') { const b = document.createElement('div'); b.className = 'bub ' + side + (cls ? ' ' + cls : ''); if (name) { const n = document.createElement('small'); n.className = 'bn'; n.textContent = name; b.appendChild(n); } const t = document.createElement('span'); b.appendChild(t); lines.appendChild(b); await typeText(t, text, tk, .8); return b; },
+    chatHead(a, b) { const h = document.createElement('div'); h.className = 'chat-h'; h.innerHTML = '<span></span><span></span>'; h.children[0].textContent = a; h.children[1].textContent = b; lines.appendChild(h); },
+    meta(t) { const m = document.createElement('div'); m.className = 'meta'; m.textContent = t; lines.appendChild(m); },
+    note(t) { const m = document.createElement('div'); m.className = 'note'; m.textContent = t; lines.appendChild(m); },
+    typing(on) { if (on) { typ = document.createElement('div'); typ.className = 'typ'; typ.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>'; lines.appendChild(typ); } else if (typ) { typ.remove(); typ = null; } },
+    sfx(t, x, y, sz, r) { const s = document.createElement('span'); s.className = 'sfx'; s.textContent = t; s.style.left = x + '%'; s.style.top = y + '%'; s.style.fontSize = sz + 'px'; s.style.setProperty('--r', r + 'deg'); noise.appendChild(s); requestAnimationFrame(() => requestAnimationFrame(() => s.classList.add('in'))); },
+    meter(p) { if (mb) mb.style.width = p + '%'; },
+    spot(row) { spot.style.opacity = 1; spot.style.top = (lines.offsetTop + row.offsetTop + row.offsetHeight / 2 - 75) + 'px'; },
+    shove(row) { row.classList.add('shoved'); },
+    ignored(row) { row.classList.add('ignored'); const t = document.createElement('span'); t.className = 'tag'; t.textContent = 'no reply'; $('.tx', row).appendChild(t); },
+    blue() { root.classList.add('blue'); }
+  };
+}
+
+/* build the moment scenes */
+const recapEl = $('#recap');
+const momentScenes = M.map((m, i) => {
+  const s = document.createElement('section'); s.className = 'scene'; s.setAttribute('aria-label', m.title);
+  s.innerHTML = `<div class="wrap wide">
+    <div class="label"></div>
+    <div class="grid2">
+      <div class="stage${m.chat ? ' chat' : ''}">
+        <div class="stage-h"><span><time></time><span class="pl"></span></span><span class="hr">${m.meter ? '<span class="db">Volume nearby <i><b></b></i></span>' : ''}<button class="replay">Replay</button></span></div>
+        <div class="spot"></div><div class="lines"></div><div class="noise"></div>
+      </div>
+      <div class="side">
+        <div class="ask reveal"><div class="q">What did you notice?</div><div class="opts"></div></div>
+        <div class="voice sm fb" aria-live="polite"></div>
+        <div class="insight reveal">
+          <div><h4>How it lands</h4><p class="lands"></p></div>
+          <div><h4>Why nobody notices</h4><p class="why"></p><p class="src"></p></div>
+          <div class="try"><h4>Try instead</h4><p class="instead"></p></div>
+        </div>
+      </div>
+    </div></div>`;
+  $('.label', s).textContent = `Act ${m.act + 1}, ${ACTS[m.act]} · ${i + 1} of ${M.length}`;
+  $('time', s).textContent = m.time; $('.pl', s).textContent = m.place;
+  $('.why', s).textContent = m.why; $('.src', s).textContent = m.src ? 'Source: ' + m.src : ''; $('.lands', s).textContent = m.lands; $('.instead', s).textContent = m.instead;
+  return s;
+});
+const theoryBuilt = T.map((t, k) => makeTheoryScene(t, k));
+const ORDER = [];
+M.forEach((m, i) => { ORDER.push({ m: i }); T.forEach((t, k) => { if (t.after === i) ORDER.push({ t: k }); }); });
+ORDER.forEach(o => recapEl.before(o.m !== undefined ? momentScenes[o.m] : theoryBuilt[o.t].el));
+const scenes = [...document.querySelectorAll('.scene')];
+const NAMES = ['Start', ...ORDER.map(o => o.m !== undefined ? M[o.m].time + ' · ' + M[o.m].title : 'Why · ' + T[o.t].name), 'Your week, replayed', 'Before you go'];
+
+const RIGHT = [['You caught it.'], ['Good eye.', 500, ' That one slips past a lot of people.'], ['That’s the one.'], ['Yes.', 400, ' Exactly that.']];
+const WRONG = [['That’s what most of us would see.', 500, NL, 'Look a little closer.'], ['That’s the easy reading.', 500, NL, 'There’s something underneath it.'], ['Close, but there’s more going on.']];
+
+function momentScene(i) {
+  const m = M[i], s = momentScenes[i], st = stageAPI($('.stage', s));
+  const opts = $('.opts', s), fb = $('.fb', s), ins = $('.insight', s), ask = $('.ask', s);
+  async function playIt(tk) { st.reset(); await W(500, tk); await m.play(st, tk); }
+  $('.replay', s).addEventListener('click', () => { const tk = ++token; run(tk, playIt); });
+  return {
+    async enter(tk) {
+      opts.innerHTML = ''; fb.innerHTML = '';
+      m.q.forEach((q, qi) => {
+        const b = document.createElement('button'); b.className = 'opt'; b.textContent = q;
+        b.addEventListener('click', () => {
+          if (stats.ans[i] === undefined) stats.ans[i] = qi === m.a;
+          [...opts.children].forEach((o, oi) => { o.disabled = true; if (oi === m.a) o.classList.add('right'); else if (oi === qi) o.classList.add('wrong'); else o.classList.add('fade'); });
+          const pool = qi === m.a ? RIGHT : WRONG;
+          run(token, async t => {
+            await say(fb, pool[i % pool.length], t);
+            await W(400, t); show(ins);
+            ins.scrollIntoView({ behavior: RM ? 'auto' : 'smooth', block: 'nearest' });
+          });
+        });
+        opts.appendChild(b);
+      });
+      await playIt(tk);
+      await W(600, tk); show(ask);
+    }
+  };
+}
+
+const S = [];
+S[0] = { async enter(tk) {
+  const dl = $('#day0'); dl.innerHTML = '';
+  const blurbs = ['Phone calls, chewing, speakers. The sound we forget other people can hear.', 'Interrupting, story swapping, half-listening, ignoring the person in front of us.', 'Greetings, group chats, comfort, and apologies. Too much heat, too much logic.'];
+  ACTS.forEach((a, k) => { const d = document.createElement('div'); d.innerHTML = '<small></small><b></b><span></span>'; d.children[0].textContent = 'Act ' + (k + 1) + ' · ' + M.filter(m => m.act === k).length + ' moments'; d.children[1].textContent = a; d.children[2].textContent = blurbs[k]; dl.appendChild(d); });
+  await W(600, tk);
+  await say($('#v0'), ['Hi.', 600, NL, `Here are ${M.length} small moments from one ordinary week.`, 600, NL, 'Nothing dramatic happens in any of them.', 700, NL, "That's exactly why nobody notices. See if you can.", 600, NL, { cls: 'aside' }, 'After each one, a short idea that explains why it happens.'], tk);
+  await W(300, tk); show(dl); await W(300, tk); show($('#go0'));
+}};
+$('#start').addEventListener('click', () => go(1));
+ORDER.forEach((o, j) => S[j + 1] = o.m !== undefined ? momentScene(o.m) : theoryBuilt[o.t].scene);
+const LAST = ORDER.length;
+
+S[LAST + 1] = { async enter(tk) {
+  const g = $('#rgrid'); g.innerHTML = '';
+  show($('#rh'));
+  await say($('#vr'), ['None of these people were bad.', 500, NL, "That's what makes them so easy to miss.", 600, NL, 'Most of us have been every one of them at some point this week.'], tk);
+  for (const [i, m] of M.entries()) {
+    if (i === 0 || M[i - 1].act !== m.act) { const h = document.createElement('div'); h.className = 'actrow'; h.textContent = 'Act ' + (m.act + 1) + ' · ' + ACTS[m.act]; g.appendChild(h); }
+    const c = document.createElement('div'); c.className = 'rc reveal';
+    const a = stats.ans[i];
+    c.innerHTML = '<time></time><b></b><span></span><div class="mk"></div>';
+    c.children[0].textContent = m.time; c.children[1].textContent = m.rule; c.children[2].textContent = m.title;
+    const mk = c.children[3]; mk.textContent = a === true ? 'You spotted it' : a === false ? 'Missed it' : 'Skipped'; mk.classList.add(a === true ? 'y' : a === false ? 'n' : 's');
+    g.appendChild(c); await W(160, tk); show(c);
+  }
+}};
+
+S[LAST + 2] = { async enter(tk) {
+  $('#vc2').innerHTML = '';
+  const got = stats.ans.filter(x => x === true).length, tried = stats.ans.filter(x => x !== undefined).length;
+  const min = Math.max(1, Math.round((Date.now() - stats.start) / 60000));
+  const ops = [];
+  if (tried) ops.push(`You spotted ${got} of ${tried}.`, 600, NL, { cls: 'aside' },
+    got === tried ? "You didn't miss one. The hard part is catching yourself." : got === 0 ? "That's alright. That's what makes this stuff invisible." : 'The ones you missed are probably the ones you do.', 900, NL);
+  ops.push(`We spent ${min} minute${min > 1 ? 's' : ''} on one pretend week.`, 600, NL, 'You’ll have a real one starting tomorrow, with most of these moments in it.', 800);
+  if (stats.away) ops.push(NL, { cls: 'aside' }, `You stepped away ${stats.away === 1 ? 'once' : stats.away + ' times'} while I was talking. I noticed. People always do.`, 700);
+  await say($('#vc'), ops, tk);
+  await W(1100, tk);
+  await say($('#vc2'), ['Lower your voice.', 400, ' Let them finish.', 400, NL, 'Stay on their story.', 400, ' Look up.', 600, NL, 'Feel it, but don’t aim it.', 400, ' Comfort first, facts later.', 600, NL, 'Basic things. That’s why they matter.', 1000, NL, { cls: 'aside' }, 'Thanks for paying attention. It’s rarer than it should be.'], tk);
+  const ul = $('#srclist'); ul.innerHTML = ''; M.filter(m => m.src).forEach(m => { const li = document.createElement('li'); li.textContent = m.title + ': ' + m.src; ul.appendChild(li); }); T.forEach(t => { const li = document.createElement('li'); li.textContent = t.name + ': ' + t.src; ul.appendChild(li); });
+  show($('#srcs')); show($('#endc'));
+}};
+$('#again').addEventListener('click', () => { stats.ans = []; stats.away = 0; stats.start = Date.now(); go(0); });
+
+/* navigation */
+const ticks = $('#ticks'); scenes.forEach(() => ticks.appendChild(document.createElement('i')));
+function go(i) {
+  if (i < 0 || i >= scenes.length) return;
+  S[cur] && S[cur].leave && S[cur].leave();
+  scenes[cur].classList.remove('on');
+  cur = i; const tk = ++token; rush = false;
+  const sc = scenes[i]; sc.classList.add('on'); sc.scrollTop = 0;
+  sc.querySelectorAll('.reveal').forEach(e => e.classList.remove('in'));
+  sc.querySelectorAll('.voice').forEach(v => v.innerHTML = '');
+  $('#where').textContent = NAMES[i];
+  $('#count').textContent = String(i + 1).padStart(2, '0') + ' / ' + String(scenes.length).padStart(2, '0');
+  [...ticks.children].forEach((t, j) => t.className = j < i ? 'done' : j === i ? 'now' : '');
+  $('#prev').disabled = i === 0; $('#next').disabled = i === scenes.length - 1;
+  run(tk, S[i].enter);
+}
+function next() { if (busy === token) { rush = true; return; } go(cur + 1); }
+$('#next').addEventListener('click', next);
+$('#prev').addEventListener('click', () => go(cur - 1));
+addEventListener('keydown', e => {
+  const tg = e.target;
+  if (['ArrowRight', 'PageDown'].includes(e.key) || (e.key === ' ' && !(tg && tg.tagName === 'BUTTON'))) { e.preventDefault(); next(); }
+  else if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); go(cur - 1); }
+});
+go(0);
+})();
+</script>
+</body>
+</html>
